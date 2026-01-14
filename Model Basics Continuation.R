@@ -42,3 +42,33 @@ ggplot(sim2, aes(x)) +
     size = 4
   )
 
+# Continuous and Categorical Data
+view(sim3)
+ggplot(sim3, aes(x1, y)) +
+  geom_point(aes(color = x2))
+
+# Model 1 one slope for all groups
+mod1 <- lm(y ~ x1 + x2, data = sim3)
+# Model 2 has different slopes per group
+mod2 <- lm(y ~ x1 * x2, data = sim3)
+
+grid <- sim3 %>%
+  data_grid(x1, x2) %>%
+  gather_predictions(mod1, mod2)
+grid
+
+ggplot(sim3, aes(x1, y, color = x2)) +
+  geom_point() +
+  geom_line(data = grid, aes(y = pred)) +
+  facet_wrap(~ model)
+
+# Residual analysis
+sim3 <- sim3 %>%
+  gather_residuals(mod1, mod2)
+
+ggplot(sim3, aes(x1, resid, color = x2)) +
+  geom_point() +
+  facet_grid(model ~ x2)
+
+anova(mod1, mod2)
+# Model 2 is decisively more accurate than model 1
