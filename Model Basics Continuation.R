@@ -72,3 +72,65 @@ ggplot(sim3, aes(x1, resid, color = x2)) +
 
 anova(mod1, mod2)
 # Model 2 is decisively more accurate than model 1
+
+# Interactions (Two Continuous)
+mod1 <- lm(y ~ x1 + x2, data = sim4)
+mod2 <- lm(y ~ x1 * x2, data = sim4)
+
+grid <- sim4 %>%
+  data_grid(
+    x1 = seq_range(x1, 5),
+    x2 = seq_range(x2, 5)
+  ) %>%
+  gather_predictions(mod1, mod2)
+grid
+
+ggplot(grid, aes(x1, x2)) +
+  geom_tile(aes(fill = pred)) +
+  facet_wrap(~ model)
+
+ggplot(grid, aes(x1, pred, color = x2, group = x2)) +
+  geom_line() +
+  facet_wrap(~ model)
+
+ggplot(grid, aes(x2, pred, color = x1, group = x1)) +
+  geom_line() +
+  facet_wrap(~ model)
+
+#Transformations
+df <- tribble(
+  ~y, ~x,
+  1,  1,
+  2,  2,
+  3,  3
+)
+model_matrix(df, y ~ x^2 + x)
+
+model_matrix(df, y ~ I(x^2) + x)
+
+library(splines)
+model_matrix(df, y ~ ns(x, 2))
+
+sim5 <- tibble(
+  x = seq(0, 3.5 * pi, length = 50),
+  y = 4 * sin(x) + rnorm(length(x))
+)
+
+ggplot(sim5, aes(x, y)) +
+  geom_point()
+
+# Taylor theorem
+mod1 <- lm(y ~ ns(x, 1), data = sim5)
+mod2 <- lm(y ~ ns(x, 2), data = sim5)
+mod3 <- lm(y ~ ns(x, 3), data = sim5)
+mod4 <- lm(y ~ ns(x, 4), data = sim5)
+mod5 <- lm(y ~ ns(x, 5), data = sim5)
+
+grid <- sim5 %>%
+  data_grid(x = seq_range(x, n = 50, expand = 0.1)) %>%
+  gather_predictions(mod1, mod2, mod3, mod4, mod5, .pred = "y")
+
+ggplot(sim5, aes(x, y)) +
+  geom_point() +
+  geom_line(data = grid, color = "red") +
+  facet_wrap(~ model)
